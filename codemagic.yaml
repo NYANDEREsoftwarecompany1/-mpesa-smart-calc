@@ -1,11 +1,14 @@
 workflows:
-  default:
-    name: Default Workflow
-    scripts:
-      - name: Create Android folder
-        script: |
-          flutter create --platforms=android --org com.nyandere .
+  android-workflow:
+    name: Android Workflow
     environment:
       flutter: stable
+    scripts:
+      - name: Create Android folder
+        script: flutter create .
+      - name: Get dependencies
+        script: flutter pub get
+      - name: Build APK
+        script: flutter build apk --release
     artifacts:
-      - build/app/outputs/**/*.apk
+      - build/app/outputs/flutter-apk/app-release.apk
