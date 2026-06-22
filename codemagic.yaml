@@ -11,10 +11,10 @@ workflows:
             flutter create .
             git checkout HEAD -- lib/main.dart
           fi
-      - name: Fix Gradle for AdMob
+      - name: Update Gradle
         script: |
-          echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.0-all.zip" > android/gradle/wrapper/gradle-wrapper.properties
-          sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "1.9.22"/' android/build.gradle
+          cd android
+          ./gradlew wrapper --gradle-version 8.0
       - name: Get dependencies
         script: flutter pub get
       - name: Build APK
