@@ -1,5 +1,5 @@
-name: mpesa_smart_calc_ke
-description: M-Pesa rounding calculator app KE
+name: mpesa_smart_calc
+description: M-PESA Smart Calculator KE
 version: 1.0.0+1
 
 environment:
@@ -10,7 +10,7 @@ dependencies:
     sdk: flutter
   google_mobile_ads: ^5.1.0
   shared_preferences: ^2.2.2
-  share_plus: ^10.0.0
+  share_plus: ^10.0.2
 
 flutter:
   uses-material-design: true
