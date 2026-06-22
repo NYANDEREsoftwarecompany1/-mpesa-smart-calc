@@ -4,8 +4,13 @@ workflows:
     environment:
       flutter: stable
     scripts:
-      - name: Create Android folder
-        script: flutter create .
+      - name: Set up project
+        script: |
+          if [ ! -d "android" ]; then
+            flutter create .
+            # Restore our custom main.dart after create
+            git checkout HEAD -- lib/main.dart
+          fi
       - name: Get dependencies
         script: flutter pub get
       - name: Build APK
