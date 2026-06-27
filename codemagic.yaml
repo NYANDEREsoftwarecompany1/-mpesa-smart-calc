@@ -1,0 +1,13 @@
+workflows:
+  android-debug:
+    name: Android Debug Build
+    environment:
+      flutter: 3.22.2
+      java: 17
+    scripts:
+      - name: Get dependencies
+        script: flutter pub get
+      - name: Build debug APK
+        script: flutter build apk --debug
+    artifacts:
+      - build/app/outputs/flutter-apk/app-debug.apk
