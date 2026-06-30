@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.yourname.mpesacalc"
+    namespace = "com.standley.mpesacalc"  // ✅ Your unique package name
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,8 +20,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.yourname.mpesacalc"
-        minSdk = 21
+        applicationId = "com.standley.mpesacalc"  // ✅ Must match namespace
+        minSdk = 21  // ✅ AdMob requires 21+ = No crash on Kenyan phones
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
