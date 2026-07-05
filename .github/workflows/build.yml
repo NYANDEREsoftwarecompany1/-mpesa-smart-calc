@@ -29,6 +29,40 @@ jobs:
           rm -rf android
           flutter create --platforms android --project-name mpesa_smart_calc_ke .
           
+          echo "=== FORCING KOTLIN 1.9.22 IN ROOT BUILD.GRADLE ==="
+          cat > android/build.gradle << 'EOF'
+          buildscript {
+              ext.kotlin_version = '1.9.22'
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.3.0'
+                  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+              }
+          }
+          
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          
+          rootProject.buildDir = '../build'
+          subprojects {
+              project.buildDir = "${rootProject.buildDir}/${project.name}"
+          }
+          subprojects {
+              project.evaluationDependsOn(':app')
+          }
+          
+          tasks.register("clean", Delete) {
+              delete rootProject.buildDir
+          }
+          EOF
+          
           echo "=== INJECTING V2 MANIFEST + ADS ==="
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -67,12 +101,8 @@ jobs:
           echo "=== SETTING MINSDK TO 21 FOR ADMOB ==="
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
           
-          echo "=== UPGRADING KOTLIN TO 1.9.22 FOR ADMOB ==="
-          sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '1.9.22'/" android/build.gradle
-          
-          echo "=== VERIFY CHANGES ==="
-          echo "MinSDK:" && grep "minSdkVersion" android/app/build.gradle || true
-          echo "Kotlin:" && grep "ext.kotlin_version" android/build.gradle || true
+          echo "=== VERIFY ==="
+          cat android/build.gradle | grep kotlin_version
 
       - name: Get packages
         run: flutter pub get
