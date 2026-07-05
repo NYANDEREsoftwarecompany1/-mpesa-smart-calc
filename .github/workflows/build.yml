@@ -24,18 +24,16 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: FIND THE V1 FILE
+      - name: PROVE THE MANIFEST IS V2
         run: |
-          echo "=== SEARCHING FOR V1 EMBEDDING CODE ==="
-          echo "If anything prints below, THAT FILE is killing your build:"
-          grep -r "io.flutter.app" android/ || echo "No io.flutter.app found"
-          echo "=== LISTING ALL MANIFESTS ==="
-          find android/ -name "AndroidManifest.xml"
-          echo "=== LISTING ALL MAINACTIVITY FILES ==="
-          find android/ -name "MainActivity.*"
-          echo "=== DONE SEARCHING ==="
-          
-      - name: Nuke v1 cache and get packages
+          echo "=== YOUR ACTUAL AndroidManifest.xml CONTENT ==="
+          cat android/app/src/main/AndroidManifest.xml
+          echo "=== CHECKING FOR V2 FLAG ==="
+          grep "flutterEmbedding" android/app/src/main/AndroidManifest.xml || echo "❌ V2 FLAG MISSING - THIS IS THE BUG"
+          echo "=== CHECKING FOR V1 NAME ==="
+          grep "io.flutter.app.FlutterApplication" android/app/src/main/AndroidManifest.xml && echo "❌ V1 NAME FOUND - THIS IS THE BUG" || echo "✅ No V1 name found"
+
+      - name: Nuke v2 cache and get packages
         run: |
           flutter clean
           rm -rf android/app/src/debug
