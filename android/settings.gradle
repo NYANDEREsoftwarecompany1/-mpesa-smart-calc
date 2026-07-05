@@ -12,9 +12,9 @@ pluginManagement {
             if (requested.id.id == "com.android.application") {
                 useModule("com.android.tools.build:gradle:$androidGradlePluginVersion")
             }
-            if (requested.id.id == "org.jetbrains.kotlin.android") {
-                useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-            }
+        if (requested.id.id == "org.jetbrains.kotlin.android" || requested.id.id == "kotlin-android") {
+    useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        }
         }
     }
 }
