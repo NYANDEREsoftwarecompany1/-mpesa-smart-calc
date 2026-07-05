@@ -29,7 +29,7 @@ jobs:
           flutter clean
           rm -rf android/app/src/debug
           rm -rf android/app/src/profile
-          rm -f android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+          rm -rf android/app/src/main/java
           rm -rf build
           flutter pub get
 
