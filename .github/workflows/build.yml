@@ -16,7 +16,7 @@ jobs:
         with:
           flutter-version: '3.19.6'
           channel: 'stable'
-          cache: true
+          cache: false
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -24,8 +24,14 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Flutter pub get
-        run: flutter pub get
+      - name: Nuke v1 cache and get packages
+        run: |
+          flutter clean
+          rm -rf android/app/src/debug
+          rm -rf android/app/src/profile
+          rm -f android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+          rm -rf build
+          flutter pub get
 
       - name: Build APK
         run: flutter build apk --release
