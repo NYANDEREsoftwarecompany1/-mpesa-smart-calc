@@ -63,9 +63,9 @@ jobs:
           </manifest>
           EOF
           echo "=== SETTING MINSDK TO 21 FOR ADMOB ==="
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/' android/app/build.gradle.kts
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
           echo "=== VERIFY MINSDK CHANGE ==="
-          grep "minSdk" android/app/build.gradle.kts
+          grep "minSdkVersion" android/app/build.gradle
 
       - name: Get packages
         run: flutter pub get
