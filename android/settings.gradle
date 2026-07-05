@@ -1,8 +1,21 @@
 pluginManagement {
+    def androidGradlePluginVersion = "7.3.1"
+    def kotlinVersion = "1.7.10"
+    
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
+    }
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "com.android.application") {
+                useModule("com.android.tools.build:gradle:$androidGradlePluginVersion")
+            }
+            if (requested.id.id == "org.jetbrains.kotlin.android") {
+                useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+            }
+        }
     }
 }
 
