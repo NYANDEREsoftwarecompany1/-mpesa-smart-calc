@@ -64,8 +64,11 @@ jobs:
           EOF
           echo "=== SETTING MINSDK TO 21 FOR ADMOB ==="
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
-          echo "=== VERIFY MINSDK CHANGE ==="
-          grep "minSdkVersion" android/app/build.gradle
+          echo "=== UPGRADING KOTLIN TO 1.9.22 FOR ADMOB ==="
+          sed -i 's/ext.kotlin_version = "1.7.10"/ext.kotlin_version = "1.9.22"/' android/build.gradle
+          sed -i 's/ext.kotlin_version = "1.7.1"/ext.kotlin_version = "1.9.22"/' android/build.gradle
+          echo "=== VERIFY KOTLIN VERSION ==="
+          grep "ext.kotlin_version" android/build.gradle
 
       - name: Get packages
         run: flutter pub get
