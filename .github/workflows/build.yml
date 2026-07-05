@@ -28,6 +28,7 @@ jobs:
         run: |
           rm -rf android
           flutter create --platforms android --project-name mpesa_smart_calc_ke .
+          
           echo "=== INJECTING V2 MANIFEST + ADS ==="
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -62,13 +63,16 @@ jobs:
               <uses-permission android:name="android.permission.INTERNET"/>
           </manifest>
           EOF
+          
           echo "=== SETTING MINSDK TO 21 FOR ADMOB ==="
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
+          
           echo "=== UPGRADING KOTLIN TO 1.9.22 FOR ADMOB ==="
-          sed -i 's/ext.kotlin_version = "1.7.10"/ext.kotlin_version = "1.9.22"/' android/build.gradle
-          sed -i 's/ext.kotlin_version = "1.7.1"/ext.kotlin_version = "1.9.22"/' android/build.gradle
-          echo "=== VERIFY KOTLIN VERSION ==="
-          grep "ext.kotlin_version" android/build.gradle
+          sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '1.9.22'/" android/build.gradle
+          
+          echo "=== VERIFY CHANGES ==="
+          echo "MinSDK:" && grep "minSdkVersion" android/app/build.gradle || true
+          echo "Kotlin:" && grep "ext.kotlin_version" android/build.gradle || true
 
       - name: Get packages
         run: flutter pub get
