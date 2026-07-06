@@ -26,24 +26,29 @@ class _MainScreenState extends State<MainScreen> {
     _loadBannerAd();
   }
 
+  // ✅ FIXED: LISTENER IS SET DURING CREATION, NOT AFTER
   Future<void> _loadBannerAd() async {
     await Future.delayed(const Duration(seconds: 1));
-    _bannerAd = await AdService.createBannerAd();
-    
-    _bannerAd!.listener = BannerAdListener(
-      onAdLoaded: (ad) {
-        if (mounted) {
-          setState(() {
-            _isAdLoaded = true;
-          });
-        }
-      },
-      onAdFailedToLoad: (ad, error) {
-        ad.dispose();
-        _bannerAd = null;
-      },
+
+    _bannerAd = BannerAd(
+      adUnitId: AdService.bannerAdUnitId,
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener( // ← LISTENER HERE, NOT _bannerAd!.listener =
+        onAdLoaded: (ad) {
+          if (mounted) {
+            setState(() {
+              _isAdLoaded = true;
+            });
+          }
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          _bannerAd = null;
+        },
+      ),
     );
-    
+
     await _bannerAd!.load();
   }
 
@@ -54,7 +59,6 @@ class _MainScreenState extends State<MainScreen> {
     int input = int.tryParse(_amountController.text)?? 0;
     if (input <= 0) return;
 
-    // M-PESA fee logic: round up to nearest 10
     int rounded = ((input + 9) ~/ 10) * 10;
     int lost = rounded - input;
 
@@ -65,7 +69,6 @@ class _MainScreenState extends State<MainScreen> {
       _calculateCount++;
     });
 
-    // Show interstitial every 3rd calculation
     if (_calculateCount % 3 == 0) {
       AdService.showInterstitialIfReady();
     }
@@ -161,7 +164,7 @@ class _MainScreenState extends State<MainScreen> {
                     opacity: _showResult? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 300),
                     child: _showResult
-                       ? Container(
+                      ? Container(
                             padding: const EdgeInsets.all(25),
                             decoration: BoxDecoration(
                               color: Colors.white,
