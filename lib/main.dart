@@ -51,11 +51,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   bool _isBannerAdReady = false;
   late TabController _tabController;
 
-  // REPLACE WITH YOUR REAL AD IDS BEFORE PUBLISHING
-  final String _bannerAdUnitId = 'ca-app-pub-3940256099942544/6300978111'; // TEST
-  final String _interstitialAdUnitId = 'ca-app-pub-3940256099942544/1033173712'; // TEST
-  
-  // YOUR PRIVACY POLICY URL - UPDATE AFTER GITHUB PAGES IS LIVE
+  final String _bannerAdUnitId = 'ca-app-pub-3940256099942544/6300978111';
+  final String _interstitialAdUnitId = 'ca-app-pub-3940256099942544/1033173712';
   final String privacyPolicyUrl = 'https://nyanderesoftwarecompany.github.io/-mpesa-smart-calc/privacy_policy.html';
 
   @override
@@ -112,7 +109,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     await prefs.setString('calc_history', json.encode(history));
   }
 
-  // 2026 M-PESA FEES - OFFICIAL SAFARICOM
   int getSendFee(int amount) {
     if (amount <= 0) return 0;
     if (amount <= 100) return 0;
@@ -175,7 +171,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     _saveToHistory(amount, fee, transactionType);
   }
 
-  // USSD HANDOFF TO *334#
   Future<void> dialMpesaMenu() async {
     if (_interstitialAd!= null) {
       await _interstitialAd!.show();
@@ -290,7 +285,7 @@ Calculated via M-PESA Smart Calc KE''';
         ],
       ),
       bottomNavigationBar: _isBannerAdReady
-         ? Container(
+        ? Container(
               height: _bannerAd!.size.height.toDouble(),
               child: AdWidget(ad: _bannerAd!),
             )
@@ -436,7 +431,7 @@ Calculated via M-PESA Smart Calc KE''';
             ),
           ],
           
-          // YOUR SIGNATURE FOOTER - STANO ROTHSCHILD OBAKO
+          // STANO ROTHSCHILD OBAKO SIGNATURE FOOTER
           SizedBox(height: 30),
           Container(
             padding: EdgeInsets.all(16),
