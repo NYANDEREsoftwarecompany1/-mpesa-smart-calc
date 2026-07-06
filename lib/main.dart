@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'main_screen.dart';
+import 'ad_service.dart'; // ← ADDED THIS IMPORT
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
