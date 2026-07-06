@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'main_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await MobileAds.instance.initialize();
+  MobileAds.instance.initialize(); // ← THIS LINE IS MONEY
   runApp(const MyApp());
 }
 
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.green,
-        scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+        useMaterial3: true,
       ),
       home: const MainScreen(),
     );
