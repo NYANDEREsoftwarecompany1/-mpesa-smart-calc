@@ -4,8 +4,9 @@ class AdService {
   static InterstitialAd? _interstitialAd;
   static bool _isInterstitialAdReady = false;
 
-  static const String bannerAdUnitId = 'ca-app-pub-3940256099942544/6300978111';
-  static const String interstitialAdUnitId = 'ca-app-pub-3940256099942544/1033173712';
+  // YOUR REAL ADMOB IDs - MONEY STARTS HERE
+  static const String bannerAdUnitId = 'ca-app-pub-6179269399180966/2956543811';
+  static const String interstitialAdUnitId = 'ca-app-pub-6179269399180966/6798374451';
 
   static void loadInterstitialAd() {
     InterstitialAd.load(
@@ -16,11 +17,12 @@ class AdService {
           _interstitialAd = ad;
           _isInterstitialAdReady = true;
           _interstitialAd!.setImmersiveMode(true);
+          print('✅ REAL INTERSTITIAL LOADED');
         },
         onAdFailedToLoad: (error) {
           _isInterstitialAdReady = false;
           _interstitialAd = null;
-          print('Interstitial failed: $error');
+          print('❌ Interstitial failed: $error');
         },
       ),
     );
