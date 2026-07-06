@@ -23,15 +23,15 @@ class _MainScreenState extends State<MainScreen> {
   bool _isDarkMode = false;
   bool _isWithdrawMode = false;
   bool _isSwahili = false;
-  List<String> _history = []; // ← NEW: HISTORY LIST
-  int _selectedTab = 0; // 0=Calculator, 1=History
+  List<String> _history = [];
+  int _selectedTab = 0;
 
   @override
   void initState() {
     super.initState();
     AdService.loadInterstitialAd();
     _loadBannerAd();
-    _loadHistory(); // ← LOAD SAVED HISTORY
+    _loadHistory();
   }
 
   Future<void> _loadBannerAd() async {
@@ -53,7 +53,6 @@ class _MainScreenState extends State<MainScreen> {
     await _bannerAd!.load();
   }
 
-  // ← NEW: LOAD HISTORY FROM PHONE STORAGE
   Future<void> _loadHistory() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -61,7 +60,6 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  // ← NEW: SAVE TO HISTORY
   Future<void> _saveToHistory(String entry) async {
     final prefs = await SharedPreferences.getInstance();
     _history.insert(0, entry);
@@ -69,7 +67,6 @@ class _MainScreenState extends State<MainScreen> {
     await prefs.setStringList('history', _history);
   }
 
-  // REAL M-PESA WITHDRAW FEES 2026
   int _getWithdrawFee(int amount) {
     if (amount <= 100) return 10;
     if (amount <= 500) return 27;
@@ -94,17 +91,15 @@ class _MainScreenState extends State<MainScreen> {
     int input = int.tryParse(_amountController.text)?? 0;
     if (input <= 0) return;
 
-    int rounded, lost, agentProfit;
+    int rounded, lost;
 
     if (_isWithdrawMode) {
       int fee = _getWithdrawFee(input);
-      rounded = input + fee + 20; // Amount + M-PESA fee + 20 bob agent fee
+      rounded = input + fee + 20;
       lost = fee + 20;
-      agentProfit = 20;
     } else {
       rounded = ((input + 9) ~/ 10) * 10;
       lost = rounded - input;
-      agentProfit = lost;
     }
 
     setState(() {
@@ -114,7 +109,6 @@ class _MainScreenState extends State<MainScreen> {
       _calculateCount++;
     });
 
-    // SAVE TO HISTORY
     String mode = _isWithdrawMode? 'Toa' : 'Tuma';
     _saveToHistory('$mode $input → KSh $rounded');
 
@@ -136,8 +130,8 @@ class _MainScreenState extends State<MainScreen> {
   void _shareResult() {
     if (_resultAmount!= null) {
       final text = _isWithdrawMode
-      ? 'Kutoa KSh ${_amountController.text}, mwambie agent KSh $_resultAmount\nAda: $_lostAmount bob\n\n_Calculated by M-PESA Smart Calc KE_'
-        : 'Kutuma KSh ${_amountController.text}, tumia KSh $_resultAmount\nUnapoteza: $_lostAmount bob\n\n_Calculated by M-PESA Smart Calc KE_';
+         ? 'Kutoa KSh ${_amountController.text}, mwambie agent KSh $_resultAmount\nAda: $_lostAmount bob\n\n_Calculated by M-PESA Smart Calc KE_'
+          : 'Kutuma KSh ${_amountController.text}, tumia KSh $_resultAmount\nUnapoteza: $_lostAmount bob\n\n_Calculated by M-PESA Smart Calc KE_';
       Share.share(text);
     }
   }
@@ -159,7 +153,6 @@ class _MainScreenState extends State<MainScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // MODE TOGGLE
           Container(
             decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(15)),
             child: Row(
@@ -231,7 +224,7 @@ class _MainScreenState extends State<MainScreen> {
             opacity: _showResult? 1.0 : 0.0,
             duration: const Duration(milliseconds: 300),
             child: _showResult
-            ? Container(
+               ? Container(
                     padding: const EdgeInsets.all(25),
                     decoration: BoxDecoration(
                       color: cardColor,
@@ -265,4 +258,101 @@ class _MainScreenState extends State<MainScreen> {
                               icon: const Icon(Icons.copy, color: Colors.white, size: 20),
                               label: Text(_isSwahili? 'NAKILI' : 'COPY', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF00B
+                                backgroundColor: const Color(0xFF00B140),
+                                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                            const SizedBox(width: 15),
+                            ElevatedButton.icon(
+                              onPressed: _shareResult,
+                              icon: const Icon(Icons.share, color: Colors.white, size: 20),
+                              label: Text(_isSwahili? 'TUMA' : 'SHARE', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue[700],
+                                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox(height: 200),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistory(bool isDark) {
+    final cardColor = isDark? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark? Colors.white : Colors.black;
+
+    return _history.isEmpty
+       ? Center(child: Text(_isSwahili? 'Bado hakuna historia' : 'No history yet', style: TextStyle(color: textColor, fontSize: 18)))
+        : ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: _history.length,
+            itemBuilder: (context, index) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF00B140))),
+                child: Text(_history[index], style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: textColor)),
+              );
+            },
+          );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = _isDarkMode? const Color(0xFF121212) : const Color(0xFFF5F5F5);
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        title: const Text('M-PESA Smart Calc KE', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        backgroundColor: const Color(0xFF00B140),
+        elevation: 0,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(_isSwahili? Icons.language : Icons.translate, color: Colors.white),
+            onPressed: () => setState(() => _isSwahili =!_isSwahili),
+          ),
+          IconButton(
+            icon: Icon(_isDarkMode? Icons.light_mode : Icons.dark_mode, color: Colors.white),
+            onPressed: () => setState(() => _isDarkMode =!_isDarkMode),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: _selectedTab == 0? _buildCalculator(_isDarkMode) : _buildHistory(_isDarkMode),
+          ),
+          if (_isAdLoaded && _bannerAd!= null)
+            Container(
+              alignment: Alignment.center,
+              width: _bannerAd!.size.width.toDouble(),
+              height: _bannerAd!.size.height.toDouble(),
+              child: AdWidget(ad: _bannerAd!),
+            )
+          else
+            const SizedBox(height: 50),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedTab,
+        onTap: (index) => setState(() => _selectedTab = index),
+        selectedItemColor: const Color(0xFF00B140),
+        items: [
+          BottomNavigationBarItem(icon: const Icon(Icons.calculate), label: _isSwahili? 'Hesabu' : 'Calculator'),
+          BottomNavigationBarItem(icon: const Icon(Icons.history), label: _isSwahili? 'Historia' : 'History'),
+        ],
+      ),
+    );
+  }
+}
