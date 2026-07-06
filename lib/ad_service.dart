@@ -1,22 +1,11 @@
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:flutter/material.dart';
 
 class AdService {
-  // GOOGLE TEST IDS - REPLACE WITH YOURS AFTER PLAY STORE
+  static InterstitialAd? _interstitialAd;
+  static bool _isInterstitialAdReady = false;
+
   static const String bannerAdUnitId = 'ca-app-pub-3940256099942544/6300978111';
   static const String interstitialAdUnitId = 'ca-app-pub-3940256099942544/1033173712';
-
-  static InterstitialAd? _interstitialAd;
-  static bool _isInterstitialReady = false;
-
-  static Future<BannerAd> createBannerAd() async {
-    return BannerAd(
-      adUnitId: bannerAdUnitId,
-      size: AdSize.banner,
-      request: const AdRequest(),
-      listener: const BannerAdListener(),
-    );
-  }
 
   static void loadInterstitialAd() {
     InterstitialAd.load(
@@ -25,31 +14,33 @@ class AdService {
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           _interstitialAd = ad;
-          _isInterstitialReady = true;
-          _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              _isInterstitialReady = false;
-              loadInterstitialAd();
-            },
-            onAdFailedToShowFullScreenContent: (ad, error) {
-              ad.dispose();
-              _isInterstitialReady = false;
-              loadInterstitialAd();
-            },
-          );
+          _isInterstitialAdReady = true;
+          _interstitialAd!.setImmersiveMode(true);
         },
         onAdFailedToLoad: (error) {
-          _isInterstitialReady = false;
+          _isInterstitialAdReady = false;
+          _interstitialAd = null;
+          print('Interstitial failed: $error');
         },
       ),
     );
   }
 
   static void showInterstitialIfReady() {
-    if (_isInterstitialReady && _interstitialAd!= null) {
+    if (_isInterstitialAdReady && _interstitialAd!= null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          loadInterstitialAd();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          ad.dispose();
+          loadInterstitialAd();
+        },
+      );
       _interstitialAd!.show();
-      _isInterstitialReady = false;
+      _isInterstitialAdReady = false;
+      _interstitialAd = null;
     }
   }
 }
