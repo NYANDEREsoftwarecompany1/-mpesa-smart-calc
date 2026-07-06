@@ -29,6 +29,9 @@ jobs:
           rm -rf android
           flutter create --platforms android --project-name mpesa_smart_calc_ke .
           
+          echo "=== FIXING KOTLIN PLUGIN IN SETTINGS.GRADLE ==="
+          sed -i 's/id "org.jetbrains.kotlin.android" version ".*"/id "org.jetbrains.kotlin.android" version "1.9.22"/' android/settings.gradle
+          
           echo "=== INJECTING V2 MANIFEST + ADS ==="
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -64,7 +67,7 @@ jobs:
           </manifest>
           EOF
           
-          echo "=== SETTING MINSDK TO 21 FOR ADMOB ==="
+          echo "=== SETTING MINSDK TO 21 ==="
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' android/app/build.gradle
 
       - name: Get packages
