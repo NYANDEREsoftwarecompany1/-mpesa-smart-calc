@@ -16,6 +16,7 @@ class _MainScreenState extends State<MainScreen> {
   final TextEditingController _amountController = TextEditingController();
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
+  String _adError = ''; // ← SHOW ERROR ON SCREEN
   int? _resultAmount;
   int? _lostAmount;
   bool _showResult = false;
@@ -42,9 +43,17 @@ class _MainScreenState extends State<MainScreen> {
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
-          if (mounted) setState(() => _isAdLoaded = true);
+          print('✅ BANNER LOADED');
+          if (mounted) setState(() {
+            _isAdLoaded = true;
+            _adError = '';
+          });
         },
         onAdFailedToLoad: (ad, error) {
+          print('❌ BANNER FAILED: ${error.message}');
+          if (mounted) setState(() {
+            _adError = 'Ad Error: ${error.message}'; // ← SHOW ON SCREEN
+          });
           ad.dispose();
           _bannerAd = null;
         },
@@ -130,8 +139,8 @@ class _MainScreenState extends State<MainScreen> {
   void _shareResult() {
     if (_resultAmount!= null) {
       final text = _isWithdrawMode
-         ? 'Kutoa KSh ${_amountController.text}, mwambie agent KSh $_resultAmount\nAda: $_lostAmount bob\n\n_Calculated by M-PESA Smart Calc KE_'
-          : 'Kutuma KSh ${_amountController.text}, tumia KSh $_resultAmount\nUnapoteza: $_lostAmount bob\n\n_Calculated by M-PESA Smart Calc KE_';
+       ? 'Kutoa KSh ${_amountController.text}, mwambie agent KSh $_resultAmount\nAda: $_lostAmount bob\n\n_Calculated by M-PESA Smart Calc KE_'
+        : 'Kutuma KSh ${_amountController.text}, tumia KSh $_resultAmount\nUnapoteza: $_lostAmount bob\n\n_Calculated by M-PESA Smart Calc KE_';
       Share.share(text);
     }
   }
@@ -224,7 +233,7 @@ class _MainScreenState extends State<MainScreen> {
             opacity: _showResult? 1.0 : 0.0,
             duration: const Duration(milliseconds: 300),
             child: _showResult
-               ? Container(
+             ? Container(
                     padding: const EdgeInsets.all(25),
                     decoration: BoxDecoration(
                       color: cardColor,
@@ -291,7 +300,7 @@ class _MainScreenState extends State<MainScreen> {
     final textColor = isDark? Colors.white : Colors.black;
 
     return _history.isEmpty
-       ? Center(child: Text(_isSwahili? 'Bado hakuna historia' : 'No history yet', style: TextStyle(color: textColor, fontSize: 18)))
+     ? Center(child: Text(_isSwahili? 'Bado hakuna historia' : 'No history yet', style: TextStyle(color: textColor, fontSize: 18)))
         : ListView.builder(
             padding: const EdgeInsets.all(20),
             itemCount: _history.length,
@@ -333,7 +342,14 @@ class _MainScreenState extends State<MainScreen> {
           Expanded(
             child: _selectedTab == 0? _buildCalculator(_isDarkMode) : _buildHistory(_isDarkMode),
           ),
-          if (_isAdLoaded && _bannerAd!= null)
+          // ← AD SECTION WITH ERROR MESSAGE
+          if (_adError.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(8),
+              color: Colors.red[100],
+              child: Text(_adError, style: const TextStyle(color: Colors.red, fontSize: 12), textAlign: TextAlign.center),
+            )
+          else if (_isAdLoaded && _bannerAd!= null)
             Container(
               alignment: Alignment.center,
               width: _bannerAd!.size.width.toDouble(),
@@ -341,7 +357,11 @@ class _MainScreenState extends State<MainScreen> {
               child: AdWidget(ad: _bannerAd!),
             )
           else
-            const SizedBox(height: 50),
+            Container(
+              height: 50,
+              alignment: Alignment.center,
+              child: const Text('Loading ad...', style: TextStyle(color: Colors.grey)),
+            ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
