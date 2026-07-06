@@ -22,19 +22,29 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    AdService.loadInterstitialAd();
     _loadBannerAd();
   }
 
   Future<void> _loadBannerAd() async {
-    // Delay = "content before ads" rule. Missing = AdMob holds money
     await Future.delayed(const Duration(seconds: 1));
-    _bannerAd = await AdService.createBannerAd(context);
+    _bannerAd = await AdService.createBannerAd();
+    
+    _bannerAd!.listener = BannerAdListener(
+      onAdLoaded: (ad) {
+        if (mounted) {
+          setState(() {
+            _isAdLoaded = true;
+          });
+        }
+      },
+      onAdFailedToLoad: (ad, error) {
+        ad.dispose();
+        _bannerAd = null;
+      },
+    );
+    
     await _bannerAd!.load();
-    if (mounted) {
-      setState(() {
-        _isAdLoaded = true;
-      });
-    }
   }
 
   void _calculate() {
@@ -44,6 +54,7 @@ class _MainScreenState extends State<MainScreen> {
     int input = int.tryParse(_amountController.text)?? 0;
     if (input <= 0) return;
 
+    // M-PESA fee logic: round up to nearest 10
     int rounded = ((input + 9) ~/ 10) * 10;
     int lost = rounded - input;
 
@@ -54,7 +65,7 @@ class _MainScreenState extends State<MainScreen> {
       _calculateCount++;
     });
 
-    // Show interstitial only every 3rd calc = prevents "intrusive ads" ban
+    // Show interstitial every 3rd calculation
     if (_calculateCount % 3 == 0) {
       AdService.showInterstitialIfReady();
     }
@@ -62,7 +73,7 @@ class _MainScreenState extends State<MainScreen> {
 
   void _copyResult() {
     if (_resultAmount!= null) {
-      Clipboard.setData(ClipboardData(text: 'Send ${_resultAmount!}'));
+      Clipboard.setData(ClipboardData(text: 'Send ${_resultAmount}'));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Copied: Send $_resultAmount'),
@@ -104,7 +115,7 @@ class _MainScreenState extends State<MainScreen> {
                   const SizedBox(height: 20),
                   const Text(
                     'Enter Amount',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 15),
@@ -137,12 +148,12 @@ class _MainScreenState extends State<MainScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00B140),
                       padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                       elevation: 3,
                     ),
                     child: const Text(
                       'CALCULATE',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -157,12 +168,12 @@ class _MainScreenState extends State<MainScreen> {
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(color: const Color(0xFF00B140), width: 2),
                               boxShadow: [
-                                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5)),
                               ],
                             ),
                             child: Column(
                               children: [
-                                const Text('Send:', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                                const Text('Send:', style: TextStyle(fontSize: 16, color: Colors.grey)),
                                 const SizedBox(height: 5),
                                 Text(
                                   'KSh $_resultAmount',
@@ -170,7 +181,7 @@ class _MainScreenState extends State<MainScreen> {
                                 ),
                                 const SizedBox(height: 15),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                                   decoration: BoxDecoration(
                                     color: Colors.red[50],
                                     borderRadius: BorderRadius.circular(20),
@@ -181,16 +192,16 @@ class _MainScreenState extends State<MainScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 10),
-                                const Text('Agent is right ✅', style: TextStyle(fontSize: 14, color: Colors.green, fontWeight: FontWeight.w500)),
+                                const Text('Agent is right ✅', style: TextStyle(fontSize: 14, color: Color(0xFF00B140))),
                                 const SizedBox(height: 20),
                                 ElevatedButton.icon(
                                   onPressed: _copyResult,
                                   icon: const Icon(Icons.copy, color: Colors.white),
-                                  label: const Text('COPY TO M-PESA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  label: const Text('COPY TO M-PESA', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF00B140),
-                                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   ),
                                 ),
                               ],
