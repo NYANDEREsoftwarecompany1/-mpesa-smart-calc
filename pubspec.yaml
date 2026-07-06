@@ -1,6 +1,7 @@
 name: mpesa_smart_calc_ke
-description: M-PESA calculator that rounds up to nearest 10 bob
+description: Accurate M-PESA 2026 fees calculator with *334# handoff
 publish_to: 'none'
+
 version: 1.0.0+1
 
 environment:
@@ -10,9 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   google_mobile_ads: ^5.1.0
-  cupertino_icons: ^1.0.2
-  shared_preferences: ^2.2.2
-  url_launcher: ^6.2.5
+  url_launcher: ^6.2.6
   share_plus: ^10.0.2
 
 dev_dependencies:
