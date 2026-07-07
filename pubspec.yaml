@@ -1,18 +1,28 @@
-name: mpesa_smart_calc_ke
-description: Accurate M-PESA 2026 fees calculator with *334# handoff
+name: mpesa_smart_calc
+description: M-PESA Smart Calc KE - Calculate fees before you send. Built with love in Kisumu.
 publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.10.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  
+  # ADS - MONEY
   google_mobile_ads: ^5.1.0
-  url_launcher: ^6.2.6
-  share_plus: ^10.0.2
+  
+  # OPEN *334#
+  url_launcher: ^6.2.5
+  
+  # SAVE HISTORY
+  shared_preferences: ^2.2.2
+  
+  # UI
+  cupertino_icons: ^1.0.6
 
 dev_dependencies:
   flutter_test:
@@ -21,3 +31,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  
+  # ADD YOUR ASSETS HERE LATER
+  # assets:
+  #   - assets/images/
