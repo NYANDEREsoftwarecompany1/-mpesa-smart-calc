@@ -440,11 +440,171 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween, 
                         children: [
-                        Text(
-  transactionType == 'TUMA' ? 'Send Fee:' 
-  : transactionType == 'TOA' ? 'Withdraw Fee:' 
-  : transactionType == 'LIPA' ? 'Lipa Fee:' 
-  : transactionType == 'POCHI' ? 'Pochi Fee:' 
-  : 'Paybill Fee:', 
-  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)
-),
+                          Text(
+                            transactionType == 'TUMA' ? 'Send Fee:' 
+                            : transactionType == 'TOA' ? 'Withdraw Fee:' 
+                            : transactionType == 'LIPA' ? 'Lipa Fee:' 
+                            : transactionType == 'POCHI' ? 'Pochi Fee:' 
+                            : 'Paybill Fee:', 
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)
+                          ), 
+                          Text(
+                            'KSh $calculatedFee', 
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF00A651))
+                          )
+                        ]
+                      ),
+                      Divider(height: 30),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                        children: [
+                          Text(
+                            transactionType == 'TUMA' || transactionType == 'PAYBILL' ? 'Total to Send:' 
+                            : transactionType == 'TOA' || transactionType == 'POCHI' ? 'You Receive:' 
+                            : 'Customer Pays:', 
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)
+                          ), 
+                          Text(
+                            'KSh $totalAmount', 
+                            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)
+                          )
+                        ]
+                      ),
+                      SizedBox(height: 12),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), 
+                        decoration: BoxDecoration(color: Color(0xFF00A651).withOpacity(0.1), borderRadius: BorderRadius.circular(20)), 
+                        child: Text(
+                          transactionType == 'TUMA' ? 'Send Fee: KSh $calculatedFee' 
+                          : transactionType == 'TOA' ? 'Withdraw Fee: KSh $calculatedFee' 
+                          : transactionType == 'LIPA' ? 'Lipa Fee: KSh $calculatedFee' 
+                          : transactionType == 'POCHI' ? 'Pochi Fee: KSh $calculatedFee' 
+                          : 'Paybill Fee: KSh $calculatedFee', 
+                          style: TextStyle(fontSize: 12, color: Color(0xFF00A651), fontWeight: FontWeight.w600)
+                        )
+                      ),
+                      SizedBox(height: 8),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), 
+                        decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(20)), 
+                        child: Text(
+                          'Agent is right ✓', 
+                          style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w600)
+                        )
+                      ),
+                    ]
+                  )
+                )
+              ),
+              SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  if (_interstitialAd != null) {
+                    await _interstitialAd!.show();
+                    _interstitialAd = null;
+                    _loadInterstitialAd();
+                  }
+                  
+                  String instructions = '';
+                  if (transactionType == 'TUMA') {
+                    instructions = 'After *334#: Select 1 → Send Money → Enter Number → KSh ${_amountController.text}';
+                  } else if (transactionType == 'TOA') {
+                    instructions = 'After *334#: Select 2 → Withdraw → Agent No → KSh ${_amountController.text}';
+                  } else if (transactionType == 'LIPA') {
+                    instructions = 'After *334#: Select 4 → Lipa na M-PESA → Buy Goods → Till No → KSh ${_amountController.text}';
+                  } else if (transactionType == 'POCHI') {
+                    instructions = 'After *334#: Select 4 → Pochi la Biashara → Withdraw → KSh ${_amountController.text}';
+                  } else if (transactionType == 'PAYBILL') {
+                    instructions = 'After *334#: Select 4 → Lipa na M-PESA → PayBill → Business No → KSh ${_amountController.text}';
+                  }
+                  
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Color(0xFF00A651)),
+                          SizedBox(width: 8),
+                          Text('M-PESA Steps'),
+                        ],
+                      ),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Color(0xFF00A651).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Amount: KSh ${_amountController.text}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                Text('Fee: KSh $calculatedFee', style: TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold)),
+                                Text('Total: KSh $totalAmount', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          Text('Follow these steps:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          SizedBox(height: 8),
+                          Text(instructions, style: TextStyle(fontSize: 14)),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('CANCEL'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            final Uri ussd = Uri.parse('tel:*334%23');
+                            try {
+                              if (await canLaunchUrl(ussd)) {
+                                await launchUrl(ussd);
+                              }
+                            } catch (e) {
+                              await Clipboard.setData(ClipboardData(text: '*334#'));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('*334# copied. Fungua Phone app')),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF00A651)),
+                          child: Text('OPEN *334#'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                icon: Icon(Icons.phone_android, size: 22),
+                label: Text(
+                  transactionType == 'TUMA' ? 'SEND NOW VIA M-PESA' 
+                  : transactionType == 'TOA' ? 'WITHDRAW NOW VIA M-PESA'
+                  : transactionType == 'LIPA' ? 'PAY TILL VIA M-PESA'
+                  : transactionType == 'POCHI' ? 'POCHI VIA M-PESA'
+                  : 'PAYBILL VIA M-PESA', 
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF00A651), 
+                  foregroundColor: Colors.white, 
+                  minimumSize: Size(double.infinity, 58), 
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), 
+                  elevation: 6, 
+                  shadowColor: Color(0xFF00A651).withOpacity(0.5)
+                )
+              ),
+            ],
+            SizedBox(height: 30),
+            Container(padding: EdgeInsets.all(16), decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.grey.shade900, Colors.grey.shade800]), borderRadius: BorderRadius.circular(12), border: Border.all(color: Color(0xFF00A651).withOpacity(0.3), width: 1)), child: Column(children: [Text('Not affiliated with Safaricom PLC.', style: TextStyle(fontSize: 11, color: Colors.grey), textAlign: TextAlign.center), SizedBox(height: 4), Text('Fees updated: July 2026', style: TextStyle(fontSize: 11, color: Colors.grey), textAlign: TextAlign.center), Divider(height: 24, color: Color(0xFF00A651).withOpacity(0.3)), Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.verified, size: 16, color: Color(0xFF00A651)), SizedBox(width: 6), Flexible(child: Text('Crafted by Stano Rothschild Obako', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF00A651), letterSpacing: 0.5), textAlign: TextAlign.center))]), SizedBox(height: 6), Text('© 2026 - Kisumu, Kenya 🇰🇪', style: TextStyle(fontSize: 10, color: Colors.grey), textAlign: TextAlign.center)])),
+            SizedBox(height: 80),
+          ],
+        ),
+      ),
+    );
+  }
+}
