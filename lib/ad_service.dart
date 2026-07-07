@@ -1,48 +1,32 @@
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdService {
-  static InterstitialAd? _interstitialAd;
-  static bool _isInterstitialAdReady = false;
+  // TEST IDS - REPLACE WITH YOUR REAL IDS BEFORE PUBLISH
+  static const String bannerAdUnitId = 'ca-app-pub-3940256099942544/6300978111';
+  static const String interstitialAdUnitId = 'ca-app-pub-3940256099942544/1033173712';
 
-  // YOUR REAL ADMOB IDs - MONEY STARTS HERE
-  static const String bannerAdUnitId = 'ca-app-pub-6179269399180966/2956543811';
-  static const String interstitialAdUnitId = 'ca-app-pub-6179269399180966/6798374451';
-
-  static void loadInterstitialAd() {
-    InterstitialAd.load(
-      adUnitId: interstitialAdUnitId,
-      request: const AdRequest(),
-      adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (ad) {
-          _interstitialAd = ad;
-          _isInterstitialAdReady = true;
-          _interstitialAd!.setImmersiveMode(true);
-          print('✅ REAL INTERSTITIAL LOADED');
-        },
-        onAdFailedToLoad: (error) {
-          _isInterstitialAdReady = false;
-          _interstitialAd = null;
-          print('❌ Interstitial failed: $error');
+  static BannerAd createBannerAd(Function onAdLoaded) {
+    return BannerAd(
+      adUnitId: bannerAdUnitId,
+      request: AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (ad) => onAdLoaded(),
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
         },
       ),
-    );
+    )..load();
   }
 
-  static void showInterstitialIfReady() {
-    if (_isInterstitialAdReady && _interstitialAd!= null) {
-      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (ad) {
-          ad.dispose();
-          loadInterstitialAd();
-        },
-        onAdFailedToShowFullScreenContent: (ad, error) {
-          ad.dispose();
-          loadInterstitialAd();
-        },
-      );
-      _interstitialAd!.show();
-      _isInterstitialAdReady = false;
-      _interstitialAd = null;
-    }
+  static void loadInterstitialAd(Function(InterstitialAd) onAdLoaded) {
+    InterstitialAd.load(
+      adUnitId: interstitialAdUnitId,
+      request: AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: onAdLoaded,
+        onAdFailedToLoad: (err) => null,
+      ),
+    );
   }
 }
