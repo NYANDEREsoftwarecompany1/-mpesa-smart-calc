@@ -430,6 +430,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             ElevatedButton(onPressed: calculateFees, child: Text('CALCULATE', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF00A651), foregroundColor: Colors.white, minimumSize: Size(double.infinity, 55), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)))),
             if (calculatedFee != null) ...[
               SizedBox(height: 20),
-              Card(elevation: 4, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), child: Padding(padding: EdgeInsets.all(20), child: Column(children: [
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(transactionType == 'TUMA' ? 'Send Fee:' : transactionType == 'TOA' ? 'Withdraw Fee:' : transactionType == 'LIPA' ? 'Lipa Fee:' : transactionType == 'POCHI' ? 'Pochi Fee:' : 'Paybill Fee:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)), Text('KSh $calculatedFee', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF00A651)))]),
-    
+              Card(
+                elevation: 4, 
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), 
+                child: Padding(
+                  padding: EdgeInsets.all(20), 
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                        children: [
+                          Text(
+                            transactionType == 'TUMA' ? 'Send Fee:' 
+                            : transactionType == 'TOA' ? 'Withdraw Fee:' 
+                            : trans
