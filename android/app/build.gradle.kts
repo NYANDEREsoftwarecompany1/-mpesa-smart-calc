@@ -1,38 +1,12 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application
-        android:label="M-Pesa Smart Calc"
-        android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
-        
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-            android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
-            
-            <meta-data
-              android:name="io.flutter.embedding.android.NormalTheme"
-              android:resource="@style/NormalTheme"
-              />
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-        </activity>
-        
-        <meta-data
-            android:name="flutterEmbedding"
-            android:value="2" />
-            
-        <!-- AdMob App ID -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
-            
-    </application>
-    
-    <uses-permission android:name="android.permission.INTERNET"/>
-</manifest>
+android {
+    namespace "com.nyandere.mpesasmartcalc"
+    compileSdkVersion 34
+
+    defaultConfig {
+        applicationId "com.nyandere.mpesasmartcalc"
+        minSdkVersion 21  // CHANGE THIS TO 21 OR HIGHER
+        targetSdkVersion 34
+        versionCode 1
+        versionName "1.0"
+    }
+}
