@@ -440,7 +440,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween, 
                         children: [
-                          Text(
-                            transactionType == 'TUMA' ? 'Send Fee:' 
-                            : transactionType == 'TOA' ? 'Withdraw Fee:' 
-                            : trans
+                        Text(
+  transactionType == 'TUMA' ? 'Send Fee:' 
+  : transactionType == 'TOA' ? 'Withdraw Fee:' 
+  : transactionType == 'LIPA' ? 'Lipa Fee:' 
+  : transactionType == 'POCHI' ? 'Pochi Fee:' 
+  : 'Paybill Fee:', 
+  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)
+),
