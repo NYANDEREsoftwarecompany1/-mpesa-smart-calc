@@ -1,378 +1,435 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'ad_service.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
-
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  _MainScreenState createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
+  bool _showHome = true;
   final TextEditingController _amountController = TextEditingController();
+  int? calculatedFee;
+  int? totalAmount;
+  String transactionType = 'TUMA';
+  String userMode = 'CUSTOMER';
+  List<Map<String, dynamic>> history = [];
+  
   BannerAd? _bannerAd;
-  bool _isAdLoaded = false;
-  String _adError = ''; // ← SHOW ERROR ON SCREEN
-  int? _resultAmount;
-  int? _lostAmount;
-  bool _showResult = false;
-  int _calculateCount = 0;
-  bool _isDarkMode = false;
-  bool _isWithdrawMode = false;
-  bool _isSwahili = false;
-  List<String> _history = [];
-  int _selectedTab = 0;
+  InterstitialAd? _interstitialAd;
+  bool _isBannerAdReady = false;
+
+  final String privacyPolicyUrl = 'https://nyanderesoftwarecompany.github.io/-mpesa-smart-calc/privacy_policy.html';
 
   @override
   void initState() {
     super.initState();
-    AdService.loadInterstitialAd();
+    WidgetsBinding.instance.addObserver(this);
     _loadBannerAd();
+    _loadInterstitialAd();
     _loadHistory();
   }
 
-  Future<void> _loadBannerAd() async {
-    await Future.delayed(const Duration(seconds: 1));
-    _bannerAd = BannerAd(
-      adUnitId: AdService.bannerAdUnitId,
-      size: AdSize.banner,
-      request: const AdRequest(),
-      listener: BannerAdListener(
-        onAdLoaded: (ad) {
-          print('✅ BANNER LOADED');
-          if (mounted) setState(() {
-            _isAdLoaded = true;
-            _adError = '';
-          });
-        },
-        onAdFailedToLoad: (ad, error) {
-          print('❌ BANNER FAILED: ${error.message}');
-          if (mounted) setState(() {
-            _adError = 'Ad Error: ${error.message}'; // ← SHOW ON SCREEN
-          });
-          ad.dispose();
-          _bannerAd = null;
-        },
-      ),
-    );
-    await _bannerAd!.load();
-  }
-
-  Future<void> _loadHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _history = prefs.getStringList('history')?? [];
-    });
-  }
-
-  Future<void> _saveToHistory(String entry) async {
-    final prefs = await SharedPreferences.getInstance();
-    _history.insert(0, entry);
-    if (_history.length > 10) _history = _history.sublist(0, 10);
-    await prefs.setStringList('history', _history);
-  }
-
-  int _getWithdrawFee(int amount) {
-    if (amount <= 100) return 10;
-    if (amount <= 500) return 27;
-    if (amount <= 1000) return 28;
-    if (amount <= 1500) return 28;
-    if (amount <= 2500) return 28;
-    if (amount <= 3500) return 50;
-    if (amount <= 5000) return 50;
-    if (amount <= 7500) return 75;
-    if (amount <= 10000) return 75;
-    if (amount <= 15000) return 95;
-    if (amount <= 20000) return 95;
-    if (amount <= 35000) return 100;
-    if (amount <= 50000) return 100;
-    return 110;
-  }
-
-  void _calculate() {
-    FocusScope.of(context).unfocus();
-    if (_amountController.text.isEmpty) return;
-
-    int input = int.tryParse(_amountController.text)?? 0;
-    if (input <= 0) return;
-
-    int rounded, lost;
-
-    if (_isWithdrawMode) {
-      int fee = _getWithdrawFee(input);
-      rounded = input + fee + 20;
-      lost = fee + 20;
-    } else {
-      rounded = ((input + 9) ~/ 10) * 10;
-      lost = rounded - input;
-    }
-
-    setState(() {
-      _resultAmount = rounded;
-      _lostAmount = lost;
-      _showResult = true;
-      _calculateCount++;
-    });
-
-    String mode = _isWithdrawMode? 'Toa' : 'Tuma';
-    _saveToHistory('$mode $input → KSh $rounded');
-
-    if (_calculateCount % 3 == 0) {
-      AdService.showInterstitialIfReady();
-    }
-  }
-
-  void _copyResult() {
-    if (_resultAmount!= null) {
-      final text = _isWithdrawMode? 'Withdraw KSh $_resultAmount' : 'Send KSh $_resultAmount';
-      Clipboard.setData(ClipboardData(text: text));
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadInterstitialAd();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Copied: $text'), duration: const Duration(seconds: 2), backgroundColor: const Color(0xFF00B140)),
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Welcome back! Calculate another fee?'),
+            ],
+          ),
+          backgroundColor: Color(0xFF00A651),
+          duration: Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'CALC',
+            textColor: Colors.white,
+            onPressed: () => setState(() => _showHome = false),
+          ),
+        ),
       );
     }
   }
 
-  void _shareResult() {
-    if (_resultAmount!= null) {
-      final text = _isWithdrawMode
-       ? 'Kutoa KSh ${_amountController.text}, mwambie agent KSh $_resultAmount\nAda: $_lostAmount bob\n\n_Calculated by M-PESA Smart Calc KE_'
-        : 'Kutuma KSh ${_amountController.text}, tumia KSh $_resultAmount\nUnapoteza: $_lostAmount bob\n\n_Calculated by M-PESA Smart Calc KE_';
-      Share.share(text);
+  void _loadBannerAd() {
+    _bannerAd = AdService.createBannerAd(() {
+      setState(() => _isBannerAdReady = true);
+    });
+  }
+
+  void _loadInterstitialAd() {
+    AdService.loadInterstitialAd((ad) {
+      _interstitialAd = ad;
+    });
+  }
+
+  Future<void> _loadHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? historyString = prefs.getString('calc_history');
+    if (historyString != null) {
+      setState(() {
+        history = List<Map<String, dynamic>>.from(json.decode(historyString));
+      });
+    }
+  }
+
+  Future<void> _saveToHistory(int amount, int fee, String type) async {
+    final prefs = await SharedPreferences.getInstance();
+    history.insert(0, {
+      'amount': amount,
+      'fee': fee,
+      'type': type,
+      'date': DateTime.now().toIso8601String(),
+    });
+    if (history.length > 50) history.removeLast();
+    await prefs.setString('calc_history', json.encode(history));
+  }
+
+  int getSendFee(int amount) {
+    if (amount <= 0) return 0;
+    if (amount <= 100) return 0;
+    if (amount <= 500) return 7;
+    if (amount <= 1000) return 13;
+    if (amount <= 1500) return 23;
+    if (amount <= 2500) return 33;
+    if (amount <= 3500) return 53;
+    if (amount <= 5000) return 57;
+    if (amount <= 7500) return 78;
+    if (amount <= 10000) return 90;
+    if (amount <= 15000) return 100;
+    if (amount <= 20000) return 105;
+    if (amount <= 250000) return 108;
+    return 0;
+  }
+
+  int getWithdrawFee(int amount) {
+    if (amount < 50) return -1;
+    if (amount <= 100) return 11;
+    if (amount <= 500) return 29;
+    if (amount <= 1000) return 29;
+    if (amount <= 1500) return 29;
+    if (amount <= 2500) return 29;
+    if (amount <= 3500) return 52;
+    if (amount <= 5000) return 69;
+    if (amount <= 7500) return 87;
+    if (amount <= 10000) return 115;
+    if (amount <= 15000) return 167;
+    if (amount <= 20000) return 185;
+    if (amount <= 35000) return 197;
+    if (amount <= 50000) return 278;
+    if (amount <= 250000) return 309;
+    return -1;
+  }
+
+  int getLipaFee(int amount) {
+    if (amount <= 3500) return 0;
+    return 10;
+  }
+
+  int getPochiFee(int amount) {
+    if (amount < 50) return -1;
+    if (amount <= 3500) return 0;
+    if (amount <= 7500) return 15;
+    return 25;
+  }
+
+  int getPaybillFee(int amount) {
+    if (amount <= 1000) return 0;
+    if (amount <= 7500) return 10;
+    return 20;
+  }
+
+  void calculateFees() {
+    int amount = int.tryParse(_amountController.text) ?? 0;
+    if (amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Weka kiasi sahihi')),
+      );
+      return;
+    }
+    
+    int fee = 0;
+    if (transactionType == 'TUMA') fee = getSendFee(amount);
+    else if (transactionType == 'TOA') fee = getWithdrawFee(amount);
+    else if (transactionType == 'LIPA') fee = getLipaFee(amount);
+    else if (transactionType == 'POCHI') fee = getPochiFee(amount);
+    else if (transactionType == 'PAYBILL') fee = getPaybillFee(amount);
+    
+    if (fee == -1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Kiasi si sahihi. Minimum ni KSh 50')),
+      );
+      return;
+    }
+    
+    setState(() {
+      calculatedFee = fee;
+      if (transactionType == 'TUMA' || transactionType == 'PAYBILL') {
+        totalAmount = amount + fee;
+      } else if (transactionType == 'TOA' || transactionType == 'POCHI') {
+        totalAmount = amount - fee;
+      } else {
+        totalAmount = amount;
+      }
+    });
+    _saveToHistory(amount, fee, transactionType);
+  }
+
+  Future<void> dialMpesaMenu() async {
+    if (_interstitialAd != null) {
+      await _interstitialAd!.show();
+      _interstitialAd = null;
+      _loadInterstitialAd();
+    }
+    final Uri ussd = Uri.parse('tel:*334%23');
+    try {
+      if (await canLaunchUrl(ussd)) {
+        await launchUrl(ussd);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('💚 Finish here, then come back to calculate more'),
+            backgroundColor: Color(0xFF00A651),
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      await Clipboard.setData(ClipboardData(text: '*334#'));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('*334# copied. Fungua Phone app')),
+      );
+    }
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    final Uri url = Uri.parse(privacyPolicyUrl);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _bannerAd?.dispose();
+    _interstitialAd?.dispose();
     _amountController.dispose();
     super.dispose();
   }
 
-  Widget _buildCalculator(bool isDark) {
-    final bgColor = isDark? const Color(0xFF121212) : const Color(0xFFF5F5F5);
-    final cardColor = isDark? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDark? Colors.white : Colors.black;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(15)),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _isWithdrawMode = false),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      decoration: BoxDecoration(
-                        color:!_isWithdrawMode? const Color(0xFF00B140) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Text(_isSwahili? 'TUMA' : 'SEND', textAlign: TextAlign.center,
-                        style: TextStyle(fontWeight: FontWeight.bold, color:!_isWithdrawMode? Colors.white : textColor)),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _isWithdrawMode = true),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      decoration: BoxDecoration(
-                        color: _isWithdrawMode? const Color(0xFF00B140) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Text(_isSwahili? 'TOA' : 'WITHDRAW', textAlign: TextAlign.center,
-                        style: TextStyle(fontWeight: FontWeight.bold, color: _isWithdrawMode? Colors.white : textColor)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(_isSwahili? 'Weka Kiasi' : 'Enter Amount', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: textColor), textAlign: TextAlign.center),
-          const SizedBox(height: 15),
-          TextField(
-            controller: _amountController,
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: textColor),
-            decoration: InputDecoration(
-              prefixText: 'KSh ',
-              prefixStyle: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Color(0xFF00B140)),
-              hintText: '237',
-              hintStyle: TextStyle(fontSize: 40, color: Colors.grey[400]),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Color(0xFF00B140), width: 2)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Color(0xFF00B140), width: 3)),
-              filled: true,
-              fillColor: cardColor,
-            ),
-            onSubmitted: (_) => _calculate(),
-          ),
-          const SizedBox(height: 25),
-          ElevatedButton(
-            onPressed: _calculate,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00B140),
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              elevation: 3,
-            ),
-            child: Text(_isSwahili? 'HESABU' : 'CALCULATE', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-          ),
-          const SizedBox(height: 30),
-          AnimatedOpacity(
-            opacity: _showResult? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 300),
-            child: _showResult
-             ? Container(
-                    padding: const EdgeInsets.all(25),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF00B140), width: 2),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
-                    ),
-                    child: Column(
-                      children: [
-                        Text(_isWithdrawMode? (_isSwahili? 'Toa:' : 'Withdraw:') : (_isSwahili? 'Tuma:' : 'Send:'), style: const TextStyle(fontSize: 16, color: Colors.grey)),
-                        const SizedBox(height: 5),
-                        Text('KSh $_resultAmount', style: const TextStyle(fontSize: 50, fontWeight: FontWeight.bold, color: Color(0xFF00B140))),
-                        const SizedBox(height: 15),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(20)),
-                          child: Text(
-                            _isWithdrawMode? (_isSwahili? 'Gharama: $_lostAmount bob' : 'Total cost: $_lostAmount bob')
-                              : (_isSwahili? 'Unapoteza: $_lostAmount bob' : 'You lose: $_lostAmount bob'),
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.red[700]),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(_isSwahili? 'Agent yuko sawa ✅' : 'Agent is right ✅', style: const TextStyle(fontSize: 14, color: Color(0xFF00B140))),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ElevatedButton.icon(
-                              onPressed: _copyResult,
-                              icon: const Icon(Icons.copy, color: Colors.white, size: 20),
-                              label: Text(_isSwahili? 'NAKILI' : 'COPY', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF00B140),
-                                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            ),
-                            const SizedBox(width: 15),
-                            ElevatedButton.icon(
-                              onPressed: _shareResult,
-                              icon: const Icon(Icons.share, color: Colors.white, size: 20),
-                              label: Text(_isSwahili? 'TUMA' : 'SHARE', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue[700],
-                                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )
-                : const SizedBox(height: 200),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHistory(bool isDark) {
-    final cardColor = isDark? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDark? Colors.white : Colors.black;
-
-    return _history.isEmpty
-     ? Center(child: Text(_isSwahili? 'Bado hakuna historia' : 'No history yet', style: TextStyle(color: textColor, fontSize: 18)))
-        : ListView.builder(
-            padding: const EdgeInsets.all(20),
-            itemCount: _history.length,
-            itemBuilder: (context, index) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF00B140))),
-                child: Text(_history[index], style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: textColor)),
-              );
-            },
-          );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final bgColor = _isDarkMode? const Color(0xFF121212) : const Color(0xFFF5F5F5);
-
     return Scaffold(
-      backgroundColor: bgColor,
-      appBar: AppBar(
-        title: const Text('M-PESA Smart Calc KE', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        backgroundColor: const Color(0xFF00B140),
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(_isSwahili? Icons.language : Icons.translate, color: Colors.white),
-            onPressed: () => setState(() => _isSwahili =!_isSwahili),
-          ),
-          IconButton(
-            icon: Icon(_isDarkMode? Icons.light_mode : Icons.dark_mode, color: Colors.white),
-            onPressed: () => setState(() => _isDarkMode =!_isDarkMode),
-          ),
-        ],
-      ),
-      body: Column(
+      backgroundColor: Color(0xFF121212),
+      body: _showHome ? _buildHomeChoice() : _buildCalculatorScreen(),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: _selectedTab == 0? _buildCalculator(_isDarkMode) : _buildHistory(_isDarkMode),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 6),
+            color: Color(0xFF00A651).withOpacity(0.15),
+            child: Text(
+              '⭐ 01 January 2003 - Forever Remembered ⭐',
+              style: TextStyle(
+                color: Color(0xFF00A651),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
-          // ← AD SECTION WITH ERROR MESSAGE
-          if (_adError.isNotEmpty)
+          if (_isBannerAdReady)
             Container(
-              padding: const EdgeInsets.all(8),
-              color: Colors.red[100],
-              child: Text(_adError, style: const TextStyle(color: Colors.red, fontSize: 12), textAlign: TextAlign.center),
-            )
-          else if (_isAdLoaded && _bannerAd!= null)
-            Container(
-              alignment: Alignment.center,
-              width: _bannerAd!.size.width.toDouble(),
               height: _bannerAd!.size.height.toDouble(),
               child: AdWidget(ad: _bannerAd!),
             )
           else
-            Container(
-              height: 50,
-              alignment: Alignment.center,
-              child: const Text('Loading ad...', style: TextStyle(color: Colors.grey)),
-            ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedTab,
-        onTap: (index) => setState(() => _selectedTab = index),
-        selectedItemColor: const Color(0xFF00B140),
-        items: [
-          BottomNavigationBarItem(icon: const Icon(Icons.calculate), label: _isSwahili? 'Hesabu' : 'Calculator'),
-          BottomNavigationBarItem(icon: const Icon(Icons.history), label: _isSwahili? 'Historia' : 'History'),
+            SizedBox(height: 50),
         ],
       ),
     );
   }
-}
+
+  Widget _buildHomeChoice() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0A0A0A), Color(0xFF1A1A1A), Color(0xFF0A0A0A)],
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF00A651).withOpacity(0.2), Colors.transparent],
+                  ),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Color(0xFF00A651).withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.verified, size: 18, color: Color(0xFF00A651)),
+                    SizedBox(width: 8),
+                    Text(
+                      'TRUSTED BY 50K+ KENYANS',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF00A651), letterSpacing: 1.2),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 32),
+              Text('M-PESA', style: TextStyle(fontSize: 52, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -1, shadows: [Shadow(color: Color(0xFF00A651).withOpacity(0.5), blurRadius: 20)])),
+              SizedBox(height: 8),
+              Text('Smart Calc KE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w300, color: Colors.grey.shade400, letterSpacing: 3)),
+              SizedBox(height: 40),
+              GestureDetector(
+                onTap: dialMpesaMenu,
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(28),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF00A651), Color(0xFF00C853)]),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [BoxShadow(color: Color(0xFF00A651).withOpacity(0.4), blurRadius: 20, offset: Offset(0, 8))],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Container(padding: EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.phone_android, size: 32, color: Colors.white)),
+                        Container(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)), child: Text('INSTANT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 1))),
+                      ]),
+                      SizedBox(height: 20),
+                      Text('M-PESA', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5)),
+                      SizedBox(height: 8),
+                      Text('Send • Withdraw • Pay Bills • Buy Airtime', style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w500)),
+                      SizedBox(height: 16),
+                      Row(children: [Icon(Icons.bolt, size: 16, color: Colors.white), SizedBox(width: 6), Text('Direct to *334#', style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8), fontWeight: FontWeight.w600))]),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              GestureDetector(
+                onTap: () async {
+                  if (_interstitialAd != null) {
+                    await _interstitialAd!.show();
+                    _interstitialAd = null;
+                    _loadInterstitialAd();
+                  }
+                  setState(() => _showHome = false);
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(28),
+                  decoration: BoxDecoration(color: Color(0xFF1E1E1E), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.grey.shade800, width: 1.5), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 15, offset: Offset(0, 5))]),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Container(padding: EdgeInsets.all(12), decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.red.shade700, Colors.red.shade900]), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.calculate_rounded, size: 32, color: Colors.white)),
+                        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                          Container(padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Color(0xFF00A651).withOpacity(0.15), borderRadius: BorderRadius.circular(12), border: Border.all(color: Color(0xFF00A651).withOpacity(0.3))), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.favorite, size: 12, color: Color(0xFF00A651)), SizedBox(width: 4), Text('WITH LOVE', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFF00A651), letterSpacing: 0.5))])),
+                          SizedBox(height: 6),
+                          Container(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: Colors.red.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.red.withOpacity(0.3))), child: Text('SAVE MONEY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.red, letterSpacing: 1))),
+                        ]),
+                      ]),
+                      SizedBox(height: 20),
+                      Text('SMART CALC', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5)),
+                      SizedBox(height: 8),
+                      Text('Check fees before you send', style: TextStyle(fontSize: 13, color: Colors.grey.shade400, fontWeight: FontWeight.w500)),
+                      SizedBox(height: 16),
+                      Row(children: [Icon(Icons.shield, size: 16, color: Colors.red), SizedBox(width: 6), Text('Avoid hidden charges', style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600))]),
+                    ],
+                  ),
+                ),
+              ),
+              Spacer(),
+              Container(padding: EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withOpacity(0.03), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.05))), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.favorite, size: 14, color: Color(0xFF00A651)), SizedBox(width: 8), Text('Built with love in Kisumu', style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w500))])),
+              SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCalculatorScreen() {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('M-PESA'),
+        backgroundColor: Color(0xFF00A651),
+        foregroundColor: Colors.white,
+        leading: IconButton(icon: Icon(Icons.arrow_back), onPressed: () => setState(() => _showHome = true)),
+        actions: [IconButton(icon: Icon(Icons.privacy_tip_outlined), onPressed: () { showDialog(context: context, builder: (context) => AlertDialog(title: Text('Privacy & Terms'), content: Text('We collect ZERO personal data.\n\nHistory saved only on your phone.\n\nNot affiliated with Safaricom.'), actions: [TextButton(onPressed: _openPrivacyPolicy, child: Text('Full Policy')), TextButton(onPressed: () => Navigator.pop(context), child: Text('OK'))]));})],
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SegmentedButton<String>(
+              segments: [
+                ButtonSegment(value: 'CUSTOMER', label: Text('CUSTOMER'), icon: Icon(Icons.person)),
+                ButtonSegment(value: 'BUSINESS', label: Text('BIASHARA'), icon: Icon(Icons.store)),
+              ],
+              selected: {userMode},
+              onSelectionChanged: (Set<String> newSelection) {
+                setState(() {
+                  userMode = newSelection.first;
+                  transactionType = userMode == 'CUSTOMER' ? 'TUMA' : 'LIPA';
+                  calculatedFee = null;
+                });
+              },
+            ),
+            SizedBox(height: 12),
+            SegmentedButton<String>(
+              segments: userMode == 'CUSTOMER' 
+                ? [
+                    ButtonSegment(value: 'TUMA', label: Text('SEND'), icon: Icon(Icons.send)),
+                    ButtonSegment(value: 'TOA', label: Text('WITHDRAW'), icon: Icon(Icons.money)),
+                  ]
+                : [
+                    ButtonSegment(value: 'LIPA', label: Text('LIPA'), icon: Icon(Icons.shopping_cart)),
+                    ButtonSegment(value: 'POCHI', label: Text('POCHI'), icon: Icon(Icons.account_balance_wallet)),
+                    ButtonSegment(value: 'PAYBILL', label: Text('PAYBILL'), icon: Icon(Icons.receipt)),
+                  ],
+              selected: {transactionType},
+              onSelectionChanged: (Set<String> newSelection) {
+                setState(() {
+                  transactionType = newSelection.first;
+                  calculatedFee = null;
+                });
+              },
+              style: SegmentedButton.styleFrom(selectedBackgroundColor: Color(0xFF00A651), selectedForegroundColor: Colors.white),
+            ),
+            SizedBox(height: 20),
+            TextField(controller: _amountController, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly], decoration: InputDecoration(labelText: 'Enter Amount', prefixText: 'KSh ', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), suffixIcon: IconButton(icon: Icon(Icons.clear), onPressed: () { _amountController.clear(); setState(() => calculatedFee = null); }))),
+            SizedBox(height: 16),
+            Wrap(spacing: 8, runSpacing: 8, children: [100, 500, 1000, 2000, 5000, 10000].map((amt) { return ActionChip(label: Text('KSh $amt'), onPressed: () { _amountController.text = amt.toString(); calculateFees(); }); }).toList()),
+            SizedBox(height: 20),
+            ElevatedButton(onPressed: calculateFees, child: Text('CALCULATE', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF00A651), foregroundColor: Colors.white, minimumSize: Size(double.infinity, 55), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)))),
+            if (calculatedFee != null) ...[
+              SizedBox(height: 20),
+              Card(elevation: 4, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), child: Padding(padding: EdgeInsets.all(20), child: Column(children: [
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(transactionType == 'TUMA' ? 'Send Fee:' : transactionType == 'TOA' ? 'Withdraw Fee:' : transactionType == 'LIPA' ? 'Lipa Fee:' : transactionType == 'POCHI' ? 'Pochi Fee:' : 'Paybill Fee:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)), Text('KSh $calculatedFee', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF00A651)))]),
+    
