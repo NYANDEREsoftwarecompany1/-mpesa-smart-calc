@@ -23,9 +23,10 @@
         </activity>
         
         <!-- ADMOB APP ID - REQUIRED OR BUILD FAILS -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+        <!-- ADMOB APP ID - REQUIRED OR BUILD FAILS -->
+<meta-data
+    android:name="com.google.android.gms.ads.APPLICATION_ID"
+    android:value="ca-app-pub-6179203939180596~8938793961"/>
             
         <meta-data
             android:name="flutterEmbedding"
