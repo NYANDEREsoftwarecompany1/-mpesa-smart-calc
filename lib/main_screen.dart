@@ -24,7 +24,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   InterstitialAd? _interstitialAd;
   bool _isBannerAdReady = false;
 
-  final String privacyPolicyUrl = https://nyanderesoftwarecompany1.github.io/mpesa-smart-calc/privacy_policy.html
+  final String privacyPolicyUrl = "https://nyanderesoftwarecompany1.github.io/mpesa-smart-calc/privacy_policy.html";
 
   @override
   void initState() {
