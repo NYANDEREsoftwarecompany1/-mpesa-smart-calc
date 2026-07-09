@@ -22,11 +22,10 @@
             </intent-filter>
         </activity>
         
-        <!-- ADMOB APP ID - REQUIRED OR BUILD FAILS -->
-        <!-- ADMOB APP ID - REQUIRED OR BUILD FAILS -->
-<meta-data
-    android:name="com.google.android.gms.ads.APPLICATION_ID"
-    android:value="ca-app-pub-6179203939180596~8938793961"/>
+        <!-- ADMOB APP ID - REAL MONEY - TYPO FIXED -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-617926399180966~8938793961"/>
             
         <meta-data
             android:name="flutterEmbedding"
@@ -39,5 +38,4 @@
     
     <!-- PHONE PERMISSION FOR *334# -->
     <uses-permission android:name="android.permission.CALL_PHONE"/>
-    
 </manifest>
