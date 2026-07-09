@@ -1,5 +1,5 @@
 name: mpesa_smart_calc
-description: M-PESA Smart Calc KE - Calculate fees before you send. Built with love in Kisumu.
+description: M-PESA Smart Calc KE - Calculate fees before you send. Avoid surprises.
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -11,16 +11,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-    
-  # ADS - MONEY
+
+  # ADS - REAL MONEY
   google_mobile_ads: ^5.1.0
-  
-  # OPEN *334#
+
+  # OPEN *334# + PRIVACY POLICY LINK
   url_launcher: ^6.2.5
-  
+
   # SAVE HISTORY
   shared_preferences: ^2.2.2
-  
+
   # UI
   cupertino_icons: ^1.0.6
 
@@ -31,3 +31,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  
+  # ASSETS - KAMA UKO NAZO
+  # assets:
+  #   - assets/images/
