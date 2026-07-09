@@ -1,10 +1,10 @@
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdService {
-  // BANNER - MainScreen Banner
+  // YOUR REAL BANNER AD - MainScreen Banner
   static const String bannerAdUnitId = 'ca-app-pub-617926399180966/5661893937';
   
-  // INTERSTITIAL - Calc Interstitial  
+  // YOUR REAL INTERSTITIAL AD - Calc Interstitial  
   static const String interstitialAdUnitId = 'ca-app-pub-617926399180966/8096527141';
 
   static BannerAd createBannerAd(Function onAdLoaded) {
@@ -18,7 +18,7 @@ class AdService {
           ad.dispose();
         },
       ),
-    );
+    )..load();
   }
 
   static void loadInterstitialAd(Function(InterstitialAd) onAdLoaded) {
