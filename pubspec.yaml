@@ -31,7 +31,13 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
-  # ASSETS - KAMA UKO NAZO
-  # assets:
-  #   - assets/images/
+  assets:
+    - assets/
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/icon.png"
+  min_sdk_android: 21
+  web:
+    generate: false
