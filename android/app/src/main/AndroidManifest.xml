@@ -3,7 +3,6 @@
         android:label="M-PESA Smart Calc KE"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-        
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -13,29 +12,29 @@
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
             <meta-data
-              android:name="io.flutter.embedding.android.NormalTheme"
-              android:resource="@style/NormalTheme"
-              />
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"
+                />
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        
-        <!-- ADMOB APP ID - REAL MONEY - TYPO FIXED -->
+
+        <!-- ADMOB APP ID - FIXED WITH ~ -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-617926399180966~8938793961"/>
-            
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
-    
-    <!-- INTERNET PERMISSION FOR ADS -->
+
+    <!-- INTERNET FOR ADS -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    
-    <!-- PHONE PERMISSION FOR *334# -->
+
+    <!-- PHONE FOR *334# -->
     <uses-permission android:name="android.permission.CALL_PHONE"/>
 </manifest>
