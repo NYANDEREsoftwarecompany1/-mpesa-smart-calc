@@ -5,7 +5,9 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'ad_service.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  final ThemeMode currentMode;
+  final Function(ThemeMode) onModeChanged;
+  const MainScreen({Key? key, required this.currentMode, required this.onModeChanged}) : super(key: key);
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
