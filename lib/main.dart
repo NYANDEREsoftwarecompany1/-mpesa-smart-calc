@@ -15,34 +15,13 @@ class MpesaSmartCalcApp extends StatefulWidget {
 
 class _MpesaSmartCalcAppState extends State<MpesaSmartCalcApp> {
   ThemeMode _mode = ThemeMode.system;
-
-  void updateTheme(ThemeMode newMode) {
-    setState(() {
-      _mode = newMode;
-    });
-  }
-
+  void updateTheme(ThemeMode m) => setState(() => _mode = m);
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'M-PESA Smart Calc KE',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: Color(0xFFF2F8F2),
-        appBarTheme: AppBarTheme(backgroundColor: Color(0xFF00A651), foregroundColor: Colors.white),
-        cardColor: Colors.white,
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        primarySwatch: Colors.green,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Color(0xFF121212),
-        appBarTheme: AppBarTheme(backgroundColor: Color(0xFF1A1A1A), foregroundColor: Colors.white),
-        cardColor: Color(0xFF1E1E1E),
-        useMaterial3: true,
-      ),
+      theme: ThemeData(primarySwatch: Colors.green, brightness: Brightness.light, useMaterial3: true),
+      darkTheme: ThemeData(primarySwatch: Colors.green, brightness: Brightness.dark, useMaterial3: true),
       themeMode: _mode,
       home: MainScreen(currentMode: _mode, onModeChanged: updateTheme),
     );
