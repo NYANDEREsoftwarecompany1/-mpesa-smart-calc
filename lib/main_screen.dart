@@ -28,20 +28,28 @@ class _MainScreenState extends State<MainScreen> {
   // TRANSLATIONS
   String t(String sw, String en) => isEnglish ? en : sw;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadBannerAd();
-    _loadInterstitialAd();
-  }
+  @Override
+void initState() {
+  super.initState();
+  _loadBannerAd();
+  _loadInterstitialAd();
+}
 
-  void _loadBannerAd() {
-    _bannerAd = AdService.createBannerAd(() => setState(() => _isBannerAdReady = true));
-  }
+void _loadBannerAd() {
+  _bannerAd = AdService.createBannerAd(() {
+    setState(() {
+      _isBannerAdReady = true;
+    });
+  });
+  _bannerAd?.load();
+}
 
-  void _loadInterstitialAd() {
-    AdService.loadInterstitialAd((ad) => _interstitialAd = ad);
-  }
+void _loadInterstitialAd() {
+  AdService.loadInterstitialAd((ad) {
+    _interstitialAd = ad;
+  });
+}
+
 
   // 2026 CORRECT FEES - FIXED BY YOU
   int getSendFee(int amount) {
@@ -82,46 +90,46 @@ class _MainScreenState extends State<MainScreen> {
     return -1;
   }
 
-  int getBusinessFee(int amount, String type) {
-    if (type == 'Lipa') return 0; // Till is free
-    if (type == 'Pochi') return 0; // Pochi free
-    if (type == 'Paybill') {
-      if (amount <= 100) return 0;
-      if (amount <= 500) return 7;
-      if (amount <= 1000) return 13;
-      if (amount <= 1500) return 23;
-      if (amount <= 2500) return 33;
-      if (amount <= 3500) return 53;
-      return 57;
-    }
-    return getSendFee(amount);
+  
+int getBusinessFee(int amount, String type) {
+  if (type == 'Lipa') return 0;
+  if (type == 'Pochi') return 0;
+  if (type == 'Paybill') {
+    if (amount <= 100) return 0;
+    if (amount <= 500) return 7;
+    if (amount <= 1000) return 13;
+    if (amount <= 1500) return 23;
+    if (amount <= 2500) return 33;
+    if (amount <= 3500) return 53;
+    return 57;
   }
+  return getSendFee(amount);
+}
 
-  void calculateFees() {
-    int amount = int.tryParse(_amountController.text.replaceAll(',', '')) ?? 0;
-    if (amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('Weka kiasi sahihi', 'Enter valid amount'))));
-      return;
-    }
-    int fee;
-    if (userMode == 'Customer') {
-      fee = transactionType == 'Tuma' ? getSendFee(amount) : getWithdrawFee(amount);
-    } else {
-      fee = getBusinessFee(amount, transactionType);
-    }
-    if (fee == -1) return;
-    setState(() {
-      calculatedFee = fee;
-      totalAmount = transactionType == 'Toa' ? amount - fee : amount + fee;
-      if (transactionType == 'Toa' && transactionType != 'Tuma') {
-        totalAmount = amount - fee;
-      } else if (transactionType == 'Tuma' || transactionType == 'Paybill') {
-        totalAmount = amount + fee;
-      } else {
-        totalAmount = amount;
-      }
-    });
+void calculateFees() {
+  int amount = int.tryParse(_amountController.text.replaceAll(',', '')) ?? 0;
+  if (amount <= 0) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('Weka kiasi sahihi', 'Enter valid amount'))));
+    return;
   }
+  int fee;
+  if (userMode == 'Customer') {
+    fee = transactionType == 'Tuma' ? getSendFee(amount) : getWithdrawFee(amount);
+  } else {
+    fee = getBusinessFee(amount, transactionType);
+  }
+  if (fee == -1) return;
+  setState(() {
+    calculatedFee = fee;
+    if (transactionType == 'Toa') {
+      totalAmount = amount - fee;
+    } else if (transactionType == 'Tuma') {
+      totalAmount = amount + fee;
+    } else {
+      totalAmount = amount;
+    }
+  });
+}
 
   // BUTTON INABADILIKA KWA KILA TYPE - INAPELEKA *334#
   String getActionButtonText() {
